@@ -254,9 +254,9 @@ export default function App() {
       const saved = localStorage.getItem('datanurse_admob_config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        parsed.appId = 'ca-app-pub-6112734772406406~9245095857';
-        parsed.bannerUnitId = 'ca-app-pub-6112734772406406/8877344471';
-        parsed.interstitialUnitId = 'ca-app-pub-6112734772406406/8877344471';
+        parsed.appId = 'ca-app-pub-2887402752089984~5632535357';
+        parsed.bannerUnitId = 'ca-app-pub-2887402752089984/7276789512';
+        parsed.interstitialUnitId = 'ca-app-pub-2887402752089984/7276789512';
         parsed.enabled = true;
         parsed.testMode = false;
         return parsed;
@@ -265,9 +265,9 @@ export default function App() {
     return {
       enabled: true,
       testMode: false,
-      appId: 'ca-app-pub-6112734772406406~9245095857',
-      bannerUnitId: 'ca-app-pub-6112734772406406/8877344471',
-      interstitialUnitId: 'ca-app-pub-6112734772406406/8877344471',
+      appId: 'ca-app-pub-2887402752089984~5632535357',
+      bannerUnitId: 'ca-app-pub-2887402752089984/7276789512',
+      interstitialUnitId: 'ca-app-pub-2887402752089984/7276789512',
       showBannerBottom: true,
       showInlineAds: true,
     };

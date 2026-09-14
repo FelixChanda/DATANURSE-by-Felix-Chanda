@@ -3,8 +3,8 @@
  * for online events: document download, app launch, prompts, and screen wake-up after sleep.
  */
 
-export const ADMOB_APP_ID = 'ca-app-pub-6112734772406406~9245095857';
-export const ADMOB_UNIT_ID = 'ca-app-pub-6112734772406406/8877344471';
+export const ADMOB_APP_ID = 'ca-app-pub-2887402752089984~5632535357';
+export const ADMOB_UNIT_ID = 'ca-app-pub-2887402752089984/7276789512';
 
 export type AdTriggerType =
   | 'download'
