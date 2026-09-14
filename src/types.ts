@@ -176,3 +176,41 @@ export interface FlashcardDeck {
   generatedAt: string;
   cards: Flashcard[];
 }
+
+export interface OsceVideo {
+  id: string;
+  title: string;
+  category: 'basic' | 'medsurg' | 'maternal' | 'pediatric' | 'pharmacology' | 'psychiatric' | 'community';
+  categoryLabel: string;
+  channelName: string;
+  creatorTag: string; // e.g. 'mrkoko', 'silwamba', 'mwamba', 'nmcz', 'uth', 'unza', 'custom'
+  channelSubscribers?: string;
+  institutionBadge: string;
+  channelUrl?: string;
+  youtubeId?: string;
+  directUrl: string;
+  streamUrl: string;
+  duration: string;
+  views?: string;
+  uploadDate?: string;
+  thumbnailUrl: string;
+  description: string;
+  keySteps: string[];
+  equipmentNeeded: string[];
+  examTips: string;
+  isCustomUploaded?: boolean;
+  uploadedBy?: string;
+  cloudStoragePath?: string;
+  fileSize?: string;
+  createdAt?: string;
+}
+
+export interface CloudStorageUploadProgress {
+  bytesTransferred: number;
+  totalBytes: number;
+  progressPercentage: number;
+  fileName: string;
+  status: 'idle' | 'uploading' | 'completed' | 'error';
+  downloadUrl?: string;
+  error?: string;
+}

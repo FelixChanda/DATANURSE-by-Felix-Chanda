@@ -130,6 +130,31 @@
         }
       },
       "required": ["resourceId", "userId"]
+    },
+    "OsceVideoItem": {
+      "title": "OsceVideoItem",
+      "description": "Zambian OSCE procedure video item saved in Firebase cloud storage/firestore",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "channelTitle": { "type": "string" },
+        "youtubeId": { "type": "string" },
+        "directUrl": { "type": "string" },
+        "streamUrl": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "duration": { "type": "string" },
+        "views": { "type": "string" },
+        "procedureCategory": { "type": "string" },
+        "institution": { "type": "string" },
+        "difficulty": { "type": "string font-medium" },
+        "isVerifiedZambianContent": { "type": "boolean" },
+        "description": { "type": "string" },
+        "keySteps": { "type": "array" },
+        "requiredEquipment": { "type": "array" },
+        "examinerTips": { "type": "array" }
+      },
+      "required": ["id", "title", "channelTitle", "youtubeId", "directUrl", "streamUrl"]
     }
   },
   "firestore": {
@@ -140,6 +165,10 @@
     "/users/{userId}/bookmarks/{bookmarkId}": {
       "schema": "UserBookmark",
       "description": "User specific saved bookmarks."
+    },
+    "/osce_videos/{videoId}": {
+      "schema": "OsceVideoItem",
+      "description": "Zambian nursing OSCE clinical procedure videos stored in Firebase Cloud."
     }
   }
 }

@@ -257,6 +257,88 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
                 </ul>
               </div>
             )}
+
+            {/* UNIVERSAL DOCUMENT & ATTACHMENT ACTION CARD (FOR ALL CATEGORIES) */}
+            <div className="p-4 sm:p-5 rounded-2xl border-2 border-dashed border-teal-300 dark:border-teal-700/80 bg-teal-50/70 dark:bg-teal-950/40 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="p-2.5 rounded-xl bg-teal-600 text-white shadow-xs shrink-0 mt-0.5">
+                    <Paperclip className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded bg-teal-200 dark:bg-teal-900 text-teal-900 dark:text-teal-200">
+                        {item.attachmentType || item.documentFormat || 'PDF'} Document
+                      </span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[220px] sm:max-w-md">
+                        {item.attachmentName || `${item.title}.${(item.attachmentType || item.documentFormat || 'pdf').toLowerCase()}`}
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        ({item.attachmentSize || item.fileSize || '1.8 MB'})
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                      Official curriculum attachment. Download directly in its original format (.pdf, .docx), launch in your device's external reader (Adobe, WPS, Word), or preview in-app.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 shrink-0">
+                  {onOpenPdfViewer && (
+                    <button
+                      onClick={() => onOpenPdfViewer(item)}
+                      className="px-3.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md hover:shadow-rose-500/25 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                      title="Preview Document in Built-in PDF Reader"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>Preview PDF</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setAttachmentMessage('Opening in device reader / downloading file...');
+                      openAttachmentInExternalReader(
+                        item,
+                        (msg) => {
+                          setAttachmentMessage(msg);
+                          setTimeout(() => setAttachmentMessage(null), 3500);
+                        },
+                        (err) => {
+                          setAttachmentMessage(`Notice: ${err}`);
+                          setTimeout(() => setAttachmentMessage(null), 4000);
+                        }
+                      );
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-teal-500/25 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
+                    title="Download attachment directly or open in native device reader"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Download / Device Reader</span>
+                  </button>
+
+                  <button
+                    onClick={() => printDocument(item)}
+                    className="p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                    title="Print Document"
+                  >
+                    <Printer className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {attachmentMessage && (
+                <div className="p-2.5 rounded-lg bg-teal-100 dark:bg-teal-900/80 text-teal-900 dark:text-teal-200 text-xs font-semibold flex items-center justify-between animate-fadeIn">
+                  <span>{attachmentMessage}</span>
+                  <button
+                    onClick={() => setAttachmentMessage(null)}
+                    className="text-teal-700 dark:text-teal-300 hover:text-teal-950 font-bold ml-2 cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* =======================================================

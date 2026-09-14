@@ -56,5 +56,11 @@ service cloud.firestore {
       allow create, update: if isValidUserBookmark(incoming());
       allow delete: if true;
     }
+
+    // OSCE videos collection stored in Firebase Cloud
+    match /osce_videos/{videoId} {
+      allow read: if true;
+      allow write, create, update, delete: if true;
+    }
   }
 }

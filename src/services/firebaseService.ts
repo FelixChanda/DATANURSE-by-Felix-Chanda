@@ -19,7 +19,14 @@ import {
   orderBy,
   onSnapshot
 } from 'firebase/firestore';
-import { ResourceItem } from '../types';
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject
+} from 'firebase/storage';
+import { ResourceItem, OsceVideo } from '../types';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App
@@ -28,6 +35,7 @@ const app = initializeApp(firebaseConfig);
 // CRITICAL: Initialize Firestore using the configured database ID
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+export const storage = getStorage(app, firebaseConfig.storageBucket);
 export const googleAuthProvider = new GoogleAuthProvider();
 
 export enum OperationType {
@@ -192,3 +200,151 @@ export async function signOutFirebase(): Promise<void> {
 export function subscribeAuthChange(callback: (user: User | null) => void) {
   return onAuthStateChanged(auth, callback);
 }
+
+/**
+ * Upload a File or Blob directly to Firebase Cloud Storage.
+ * Provides real-time percentage progress callback and resolves with the public download URL.
+ */
+export async function uploadFileToFirebaseStorage(
+  file: File | Blob,
+  destinationPath: string,
+  onProgress?: (progressPercentage: number) => void
+): Promise<string> {
+  try {
+    const storageRef = ref(storage, destinationPath);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    return new Promise((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          if (snapshot.totalBytes > 0) {
+            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            if (onProgress) onProgress(percent);
+          }
+        },
+        (error) => {
+          console.error('Firebase Storage upload error:', error);
+          reject(error);
+        },
+        async () => {
+          try {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadUrl);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error initiating upload to Firebase Storage:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a file from Firebase Cloud Storage by path or URL
+ */
+export async function deleteFileFromFirebaseStorage(storagePathOrUrl: string): Promise<void> {
+  try {
+    const storageRef = storagePathOrUrl.startsWith('http')
+      ? ref(storage, storagePathOrUrl)
+      : ref(storage, storagePathOrUrl);
+    await deleteObject(storageRef);
+  } catch (error) {
+    console.warn('Firebase Storage file delete note:', error);
+  }
+}
+
+/**
+ * Save an OSCE procedure video item to Firestore collection `osce_videos`
+ */
+export async function saveOsceVideoToFirestore(video: OsceVideo): Promise<void> {
+  const path = `osce_videos/${video.id}`;
+  try {
+    const cleanVideo = JSON.parse(JSON.stringify(video));
+    await setDoc(doc(db, 'osce_videos', video.id), {
+      ...cleanVideo,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+/**
+ * Fetch all OSCE procedure videos from Firestore
+ */
+export async function fetchOsceVideosFromFirestore(): Promise<OsceVideo[]> {
+  const path = 'osce_videos';
+  try {
+    const q = query(collection(db, 'osce_videos'));
+    const snapshot = await getDocs(q);
+    const videos: OsceVideo[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data() as OsceVideo;
+      if (data && data.id) {
+        videos.push(data);
+      }
+    });
+    return videos;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+/**
+ * Subscribe in real-time to Firestore `osce_videos` collection.
+ * Any new video uploaded to the cloud immediately updates all connected clients.
+ */
+export function subscribeToFirestoreOsceVideos(callback: (videos: OsceVideo[]) => void) {
+  const q = query(collection(db, 'osce_videos'));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const videos: OsceVideo[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as OsceVideo;
+        if (data && data.id) {
+          videos.push(data);
+        }
+      });
+      callback(videos);
+    },
+    (error) => {
+      console.warn('Firestore real-time OSCE videos snapshot error:', error);
+    }
+  );
+}
+
+/**
+ * Delete an OSCE video from Firestore
+ */
+export async function deleteOsceVideoFromFirestore(videoId: string): Promise<void> {
+  const path = `osce_videos/${videoId}`;
+  try {
+    await deleteDoc(doc(db, 'osce_videos', videoId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Seed initial Zambian OSCE videos into Firestore if database is empty
+ */
+export async function seedInitialOsceVideosToFirestore(initialVideos: OsceVideo[]): Promise<void> {
+  try {
+    const existing = await fetchOsceVideosFromFirestore();
+    if (existing.length === 0) {
+      console.log('Seeding initial Zambian OSCE procedure videos to Firestore Cloud...');
+      for (const video of initialVideos) {
+        await saveOsceVideoToFirestore(video);
+      }
+    }
+  } catch (error) {
+    console.warn('Could not auto-seed OSCE videos to Firestore:', error);
+  }
+}
+
