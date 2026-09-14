@@ -1,6 +1,6 @@
 {
-  "name": "DATANURSE (Nursing Database)",
-  "short_name": "DATANURSE",
+  "name": "Data Nurse",
+  "short_name": "Data Nurse",
   "description": "Comprehensive academic library and clinical database for nursing modules, past examination papers, core textbooks, clinical documents, and study notes.",
   "start_url": "/",
   "display": "standalone",

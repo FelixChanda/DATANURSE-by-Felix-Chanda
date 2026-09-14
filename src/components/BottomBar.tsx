@@ -5,8 +5,7 @@ import {
   PlusCircle,
   Sparkles,
   Settings,
-  Maximize2,
-  Minimize2
+  Video
 } from 'lucide-react';
 
 interface BottomBarProps {
@@ -17,8 +16,8 @@ interface BottomBarProps {
   onOpenSettings: () => void;
   onOpenAddModal: () => void;
   onOpenRandomFlashcards?: () => void;
-  isFullscreen?: boolean;
-  onToggleFullscreen?: () => void;
+  onOpenOsce: () => void;
+  isOsceOpen?: boolean;
   bottomOffsetClass?: string;
 }
 
@@ -30,8 +29,8 @@ export const BottomBar: React.FC<BottomBarProps> = ({
   onOpenSettings,
   onOpenAddModal,
   onOpenRandomFlashcards,
-  isFullscreen,
-  onToggleFullscreen,
+  onOpenOsce,
+  isOsceOpen,
   bottomOffsetClass = 'bottom-0'
 }) => {
   return (
@@ -115,30 +114,29 @@ export const BottomBar: React.FC<BottomBarProps> = ({
           <span className="text-[9.5px] sm:text-[11px] font-semibold mt-0.5 tracking-tight truncate w-full text-center">Flashcards</span>
         </button>
 
-        {/* 5. Fullscreen Toggle Button */}
-        {onToggleFullscreen && (
-          <button
-            id="bottom-btn-fullscreen"
-            onClick={onToggleFullscreen}
-            className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all cursor-pointer group min-w-0 ${
-              isFullscreen
-                ? 'text-teal-700 dark:text-teal-300 font-bold bg-teal-50 dark:bg-teal-950/60'
-                : 'text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-900'
-            }`}
-            title={isFullscreen ? 'Exit Full Screen' : 'Enter Full Screen Mode'}
-          >
-            <div className="relative p-1 rounded-lg">
-              {isFullscreen ? (
-                <Minimize2 className="h-4 w-4 sm:h-5 sm:w-5 text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform" />
-              ) : (
-                <Maximize2 className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform" />
-              )}
-            </div>
-            <span className="text-[9.5px] sm:text-[11px] font-semibold mt-0.5 tracking-tight truncate w-full text-center">
-              {isFullscreen ? 'Exit Screen' : 'Full Screen'}
+        {/* 5. OSCE Clinical Video Hub Button */}
+        <button
+          id="bottom-btn-osce"
+          onClick={onOpenOsce}
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all cursor-pointer group min-w-0 ${
+            isOsceOpen
+              ? 'text-rose-700 dark:text-rose-300 font-bold bg-rose-50 dark:bg-rose-950/60'
+              : 'text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-900'
+          }`}
+          title="OSCE Clinical Video Hub (@silwamba22)"
+        >
+          <div className="relative p-1 rounded-lg">
+            <Video className={`h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform ${
+              isOsceOpen ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'
+            }`} />
+            <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-black text-[7px] px-0.5 rounded-full animate-pulse">
+              LIVE
             </span>
-          </button>
-        )}
+          </div>
+          <span className="text-[9.5px] sm:text-[11px] font-semibold mt-0.5 tracking-tight truncate w-full text-center">
+            OSCE
+          </span>
+        </button>
 
         {/* 6. Settings & Author Contact Button */}
         <button

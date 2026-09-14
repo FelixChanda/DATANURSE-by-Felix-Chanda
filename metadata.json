@@ -1,5 +1,5 @@
 {
-  "name": "DATANURSE (Nursing database)",
+  "name": "Data Nurse",
   "description": "Comprehensive academic library and clinical database for nursing modules, past examination papers, core textbooks, clinical documents, and study notes.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

@@ -12,7 +12,7 @@ import {
   Minimize2,
   EyeOff,
   Eye,
-  Github
+  Cloud
 } from 'lucide-react';
 import { ResourceCategory, ThemeMode } from '../types';
 
@@ -24,7 +24,6 @@ interface HeaderProps {
   onOpenAddModal: () => void;
   onOpenClinicalTools?: () => void;
   onOpenSettings?: () => void;
-  onOpenRepoSync?: () => void;
   theme: ThemeMode;
   onToggleTheme?: () => void;
   activeCategory: ResourceCategory | 'all';
@@ -38,7 +37,6 @@ export const Header: React.FC<HeaderProps> = ({
   bookmarkedCount,
   showBookmarksOnly,
   onOpenAddModal,
-  onOpenRepoSync,
   isFullscreen,
   onToggleFullscreen,
   hideNavBars,
@@ -60,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl overflow-hidden shadow-md ring-2 ring-teal-500/30 dark:ring-teal-400/40 shrink-0 aspect-square bg-slate-900">
               <img
                 src="/bg-default.jpeg"
-                alt="DATANURSE Icon"
+                alt="Data Nurse Icon"
                 className="h-full w-full object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -69,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex flex-col min-w-0 justify-center">
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <span className="font-black text-base sm:text-2xl tracking-tight text-slate-900 dark:text-white leading-none">
-                  DATA<span className="text-teal-600 dark:text-teal-400">NURSE</span>
+                  Data <span className="text-teal-600 dark:text-teal-400">Nurse</span>
                 </span>
                 <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 shrink-0">
                   Nursing Database
@@ -100,18 +98,16 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             )}
 
-            {/* Public GitHub Repository Category Sync Button */}
-            {onOpenRepoSync && (
-              <button
-                id="header-btn-reposync"
-                onClick={onOpenRepoSync}
-                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/80 hover:bg-teal-100 dark:hover:bg-teal-900/90 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800 transition-all cursor-pointer shadow-2xs"
-                title="Sync files from public GitHub repository folders without sign in"
-              >
-                <Github className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-                <span className="hidden md:inline">Repo Sync</span>
-              </button>
-            )}
+            {/* Firebase Cloud Storage Live Sync Badge */}
+            <div
+              id="header-btn-cloud-sync"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 shadow-2xs"
+              title="Firebase Cloud Database & File Storage auto-sync active"
+            >
+              <Cloud className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="hidden md:inline">Cloud Sync</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
 
             {/* Toggle Full Screen Mode Button */}
             {onToggleFullscreen && (

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { User } from 'firebase/auth';
 import { Header } from './components/Header';
 import { StatsBar } from './components/StatsBar';
 import { FilterBar } from './components/FilterBar';
@@ -10,14 +11,24 @@ import { SettingsModal } from './components/SettingsModal';
 import { AdMobBanner } from './components/AdMobBanner';
 import { FlashcardModal } from './components/FlashcardModal';
 import { BottomBar } from './components/BottomBar';
+import { OsceModal } from './components/OsceModal';
 import { DocumentViewerModal } from './components/DocumentViewerModal';
+import { PdfViewerModal } from './components/PdfViewerModal';
 import { ApkDownloadModal } from './components/ApkDownloadModal';
 import { SplashScreen } from './components/SplashScreen';
-import { GitHubSyncModal } from './components/GitHubSyncModal';
 import { AdMobInterstitialModal } from './components/AdMobInterstitialModal';
 import { triggerAdMobInterstitial } from './utils/admobHelper';
 import { INITIAL_RESOURCES } from './data/initialResources';
 import { INITIAL_OPTIMUM_CONDITIONS, fetchOnlineClinicalGuidelines } from './data/optimumConditions';
+import {
+  testFirestoreConnection,
+  fetchResourcesFromFirestore,
+  saveResourceToFirestore,
+  subscribeToFirestoreResources,
+  subscribeAuthChange,
+  signInWithGoogleFirebase,
+  signOutFirebase
+} from './services/firebaseService';
 import {
   ResourceItem,
   ResourceCategory,
@@ -68,9 +79,11 @@ export default function App() {
   // Modal States
   const [activeDetailItem, setActiveDetailItem] = useState<ResourceItem | null>(null);
   const [activeDocumentItem, setActiveDocumentItem] = useState<ResourceItem | null>(null);
+  const [activePdfItem, setActivePdfItem] = useState<ResourceItem | null>(null);
   const [activeFlashcardResource, setActiveFlashcardResource] = useState<ResourceItem | null>(null);
   const [isClinicalToolsOpen, setIsClinicalToolsOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isOsceOpen, setIsOsceOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isApkModalOpen, setIsApkModalOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -80,7 +93,33 @@ export default function App() {
     }
     return false;
   });
-  const [isRepoSyncOpen, setIsRepoSyncOpen] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [firebaseConnected, setFirebaseConnected] = useState(false);
+
+  // Initialize Firebase connection & auth state
+  useEffect(() => {
+    testFirestoreConnection().then(setFirebaseConnected);
+    const unsubscribe = subscribeAuthChange(setFirebaseUser);
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time Firestore subscription: automatically sync uploaded documents and resources into library
+  useEffect(() => {
+    const unsubscribe = subscribeToFirestoreResources((cloudResources) => {
+      if (cloudResources && cloudResources.length > 0) {
+        setResources((prev) => {
+          const cloudMap = new Map(cloudResources.map((r) => [r.id, r]));
+          // Merge remote items into local resources, preferring remote if existing
+          const updated = prev.map((localItem) => cloudMap.get(localItem.id) || localItem);
+          // Add any new remote items not in local list
+          const localIds = new Set(prev.map((r) => r.id));
+          const newFromCloud = cloudResources.filter((r) => !localIds.has(r.id));
+          return [...newFromCloud, ...updated];
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // 5-second Hospital/Office Splash Screen State
   const [showSplash, setShowSplash] = useState(true);
@@ -320,20 +359,31 @@ export default function App() {
       prev.map((item) => {
         if (item.id === id) {
           const updated = !item.isBookmarked;
+          const updatedItem = { ...item, isBookmarked: updated };
+          // Persist bookmark state to Firebase Cloud Storage
+          saveResourceToFirestore(updatedItem).catch((err) => {
+            console.warn('Failed to sync bookmark to Firestore:', err);
+          });
           // Also update active modal if opened
           if (activeDetailItem && activeDetailItem.id === id) {
             setActiveDetailItem({ ...activeDetailItem, isBookmarked: updated });
           }
-          return { ...item, isBookmarked: updated };
+          return updatedItem;
         }
         return item;
       })
     );
   };
 
-  // Add new user resource
-  const handleAddResource = (newResource: ResourceItem) => {
+  // Add new user resource & upload to Firebase Cloud Storage
+  const handleAddResource = async (newResource: ResourceItem) => {
     setResources((prev) => [newResource, ...prev]);
+    // Save document file and resource metadata to Firebase
+    try {
+      await saveResourceToFirestore(newResource);
+    } catch (err) {
+      console.warn('Failed to auto-save resource to Firestore:', err);
+    }
     // Automatically select the category of the new resource
     setSelectedCategory(newResource.category);
     if (newResource.category === 'documents') {
@@ -343,14 +393,11 @@ export default function App() {
     }
   };
 
-  // Sync resources imported from Google Drive
-  const handleSyncDriveResources = (driveResources: ResourceItem[]) => {
-    setResources((prev) => {
-      // Filter out existing drive resources by id to avoid duplicates
-      const driveIds = new Set(driveResources.map((r) => r.id));
-      const existingFiltered = prev.filter((r) => !driveIds.has(r.id));
-      return [...driveResources, ...existingFiltered];
-    });
+  // Manual trigger to backup all local resources to Firebase
+  const handleBackupToFirebase = async () => {
+    for (const res of resources) {
+      await saveResourceToFirestore(res);
+    }
   };
 
   // Compute counts for stats bar
@@ -529,7 +576,6 @@ export default function App() {
           onOpenAddModal={() => setIsAddModalOpen(true)}
           onOpenClinicalTools={() => setIsClinicalToolsOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
-          onOpenRepoSync={() => setIsRepoSyncOpen(true)}
           theme={theme}
           onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
           activeCategory={selectedCategory}
@@ -658,10 +704,11 @@ export default function App() {
         {/* Resource Cards Grid */}
         {filteredResources.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredResources.map((item) => (
+            {filteredResources.map((item, index) => (
               <ResourceCard
                 key={item.id}
                 item={item}
+                index={index}
                 onOpenDetail={(target) => {
                   if (target.category === 'documents') {
                     setActiveDocumentItem(target);
@@ -671,6 +718,9 @@ export default function App() {
                 }}
                 onOpenDeviceReader={(target) => {
                   setActiveDocumentItem(target);
+                }}
+                onOpenPdfViewer={(target) => {
+                  setActivePdfItem(target);
                 }}
                 onToggleBookmark={(id, e) => handleToggleBookmark(id, e)}
                 onOpenFlashcards={(target, e) => {
@@ -760,7 +810,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Dedicated Bottom Bar for Tools, Bookmarks, Add, Flashcards, Fullscreen, and Settings */}
+      {/* Dedicated Bottom Bar for Tools, Bookmarks, Add, Flashcards, OSCE Videos, and Settings */}
       {!hideNavBars && (
         <BottomBar
           bookmarkedCount={counts.bookmarked}
@@ -770,8 +820,8 @@ export default function App() {
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenAddModal={() => setIsAddModalOpen(true)}
           onOpenRandomFlashcards={handleOpenRandomFlashcards}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={handleToggleFullscreen}
+          onOpenOsce={() => setIsOsceOpen(true)}
+          isOsceOpen={isOsceOpen}
           bottomOffsetClass={
             adMobConfig.enabled && adMobConfig.showBannerBottom
               ? 'bottom-[50px] sm:bottom-[54px]'
@@ -779,6 +829,12 @@ export default function App() {
           }
         />
       )}
+
+      {/* OSCE Clinical Video Hub & Procedure Scoring Rubric Modal */}
+      <OsceModal
+        isOpen={isOsceOpen}
+        onClose={() => setIsOsceOpen(false)}
+      />
 
       {/* Bottom Fixed AdMob Banner if enabled */}
       {adMobConfig.enabled && adMobConfig.showBannerBottom && (
@@ -795,6 +851,7 @@ export default function App() {
         onClose={() => setActiveDetailItem(null)}
         onToggleBookmark={(id) => handleToggleBookmark(id)}
         onOpenFlashcards={(target) => setActiveFlashcardResource(target)}
+        onOpenPdfViewer={(target) => setActivePdfItem(target)}
       />
 
       {/* Clinical Document Viewer & Device Reader Modal */}
@@ -802,6 +859,13 @@ export default function App() {
         item={activeDocumentItem}
         isOpen={Boolean(activeDocumentItem)}
         onClose={() => setActiveDocumentItem(null)}
+      />
+
+      {/* Lightweight Integrated PDF Viewer Modal */}
+      <PdfViewerModal
+        item={activePdfItem}
+        isOpen={Boolean(activePdfItem)}
+        onClose={() => setActivePdfItem(null)}
       />
 
       {/* AI Flashcard Generator & Study Modal */}
@@ -825,7 +889,7 @@ export default function App() {
         onUpdateAdMobConfig={setAdMobConfig}
       />
 
-      {/* Settings Modal (Theme, Email Contact, APK Download, Optimum Conditions, AdMob) */}
+      {/* Settings Modal (Theme, Email Contact, APK Download, Optimum Conditions, AdMob, Firebase Cloud Storage) */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -837,14 +901,15 @@ export default function App() {
         onForceSyncConditions={handleForceSyncConditions}
         isSyncing={isSyncing}
         onOpenApkModal={() => setIsApkModalOpen(true)}
-        onOpenRepoSync={() => setIsRepoSyncOpen(true)}
-      />
-
-      {/* Public GitHub Repository Category Sync Modal */}
-      <GitHubSyncModal
-        isOpen={isRepoSyncOpen}
-        onClose={() => setIsRepoSyncOpen(false)}
-        onSyncResources={handleSyncDriveResources}
+        firebaseConnected={firebaseConnected}
+        firebaseUser={firebaseUser}
+        onFirebaseSignIn={async () => {
+          await signInWithGoogleFirebase();
+        }}
+        onFirebaseSignOut={async () => {
+          await signOutFirebase();
+        }}
+        onBackupToFirebase={handleBackupToFirebase}
       />
 
       {/* Contribute / Add Resource Modal */}

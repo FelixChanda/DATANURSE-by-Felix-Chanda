@@ -350,7 +350,7 @@ app.get('/api/download-apk-package', (_req, res) => {
       "Offline Database & SW Pre-caching",
       "WebAPK Native Android Minting",
       "AdMob Verified Banner Support",
-      "GitHub Repository Category Sync Integration"
+      "Firebase Cloud Storage & Real-time Auto-Sync Integration"
     ],
     instructions: [
       "For Android: Open in Google Chrome / Samsung Internet -> Tap 3 Dots -> Tap 'Install App' or 'Add to Home Screen' to auto-mint native WebAPK.",

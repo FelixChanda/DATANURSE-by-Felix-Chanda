@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import {
   GraduationCap,
   FileText,
@@ -19,24 +20,29 @@ import {
   CheckCircle2,
   List,
   Loader2,
-  ChevronUp
+  ChevronUp,
+  Eye
 } from 'lucide-react';
 import { ResourceItem } from '../types';
 import { openInDeviceReader } from '../utils/documentHelper';
 
 interface ResourceCardProps {
   item: ResourceItem;
+  index?: number;
   onOpenDetail: (item: ResourceItem) => void;
   onToggleBookmark: (id: string, e: React.MouseEvent) => void;
   onOpenFlashcards: (item: ResourceItem, e: React.MouseEvent) => void;
   onOpenDeviceReader?: (item: ResourceItem, e: React.MouseEvent) => void;
+  onOpenPdfViewer?: (item: ResourceItem, e: React.MouseEvent) => void;
 }
 
 export const ResourceCard: React.FC<ResourceCardProps> = ({
   item,
+  index = 0,
   onOpenDetail,
   onToggleBookmark,
-  onOpenFlashcards
+  onOpenFlashcards,
+  onOpenPdfViewer
 }) => {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -122,8 +128,15 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
   };
 
   return (
-    <div
+    <motion.div
       id={`resource-card-${item.id}`}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.35,
+        ease: [0.22, 1, 0.36, 1],
+        delay: Math.min(index * 0.04, 0.28)
+      }}
       onClick={() => onOpenDetail(item)}
       className="group bg-white/60 dark:bg-slate-900/60 hover:bg-white/75 dark:hover:bg-slate-900/75 backdrop-blur-md rounded-2xl border border-slate-200/70 dark:border-slate-800/70 p-5 hover:border-teal-400/80 dark:hover:border-teal-600 hover:shadow-lg transition-all duration-200 flex flex-col justify-between cursor-pointer relative"
     >
@@ -356,6 +369,20 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
             <span>Download</span>
           </button>
 
+          {onOpenPdfViewer && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenPdfViewer(item, e);
+              }}
+              className="inline-flex items-center text-[10px] sm:text-[11px] font-bold text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 bg-rose-50 dark:bg-rose-950/70 hover:bg-rose-100 dark:hover:bg-rose-900/80 px-1.5 sm:px-2 py-1 rounded-md border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
+              title="Preview PDF Document in App"
+            >
+              <Eye className="h-3 w-3 mr-1 shrink-0" />
+              <span>Preview PDF</span>
+            </button>
+          )}
+
           <button
             onClick={(e) => onOpenFlashcards(item, e)}
             className="inline-flex items-center text-[10px] sm:text-[11px] font-bold text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 bg-teal-50 dark:bg-teal-950/70 hover:bg-teal-100 dark:hover:bg-teal-900/80 px-1.5 sm:px-2 py-1 rounded-md border border-teal-200 dark:border-teal-800 transition-colors cursor-pointer"
@@ -421,6 +448,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
           ) : null}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

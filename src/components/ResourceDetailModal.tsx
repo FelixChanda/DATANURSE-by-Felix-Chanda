@@ -28,7 +28,8 @@ import {
   FolderDown,
   Smartphone,
   Paperclip,
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
 import { ResourceItem, PastPaperQuestion } from '../types';
 import { openInDeviceReader, printDocument, openAttachmentInExternalReader } from '../utils/documentHelper';
@@ -38,13 +39,15 @@ interface ResourceDetailModalProps {
   onClose: () => void;
   onToggleBookmark: (id: string) => void;
   onOpenFlashcards?: (item: ResourceItem) => void;
+  onOpenPdfViewer?: (item: ResourceItem) => void;
 }
 
 export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
   item,
   onClose,
   onToggleBookmark,
-  onOpenFlashcards
+  onOpenFlashcards,
+  onOpenPdfViewer
 }) => {
   if (!item) return null;
 
@@ -117,6 +120,19 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Integrated PDF Viewer Button */}
+            {onOpenPdfViewer && (
+              <button
+                onClick={() => onOpenPdfViewer(item)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/80 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-purple-800 dark:text-purple-200 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                title="Preview PDF document directly inside the app"
+              >
+                <Eye className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                <span className="hidden sm:inline">Preview PDF</span>
+                <span className="sm:hidden">PDF</span>
+              </button>
+            )}
+
             {/* Universal Download & Open in Device Reader button */}
             <button
               onClick={() => openInDeviceReader(item, (msg) => setAttachmentMessage(msg))}
